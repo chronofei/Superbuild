@@ -1,0 +1,185 @@
+if (NOT SUPERBUILD_INSTALL_DIR)
+   set(SUPERBUILD_INSTALL_DIR @SUPERBUILD_INSTALL_DIR@)
+endif()
+get_filename_component(SUPERBUILD_INSTALL_DIR ${SUPERBUILD_INSTALL_DIR} ABSOLUTE)
+
+option(WITH_GLOG "Whether to find installed Glog" @WITH_GLOG@)
+option(WITH_EIGEN "Whether to find installed Eigen3" @WITH_EIGEN@)
+option(WITH_CERES "Whether to find installed Ceres" @WITH_CERES@)
+option(WITH_YAML_CPP "Whether to find installed YAML-CPP" @WITH_YAML_CPP@)
+option(WITH_GTEST "Whether to find installed GTest" @WITH_GTEST@)
+option(WITH_VIZ3D "Whether to find installed viz3d dependencies" @WITH_VIZ3D@)
+option(WITH_CEREAL "Wether to find installed cereal dependency" @WITH_CEREAL@)
+option(WITH_TCLAP "Whether to find installed tclap dependency" @WITH_TCLAP@)
+option(WITH_TESSIL "Whether to find installed Tessil dependency" @WITH_TESSIL@)
+option(WITH_SQLITE "Whether to find installed sqlite3 dependency" @WITH_SQLITE@)
+option(WITH_G2O "Whether to install g2o dependency" @WITH_G2O@)
+option(WITH_NANOFLANN "Whether to find installed nanoflann dependency" @WITH_NANOFLANN@)
+option(WITH_COLORMAP "Whether to find installed colormap dependency" @WITH_COLORMAP@)
+option(WITH_TINYPLY "Whether to find installed tinyply dependency" @WITH_TINYPLY@)
+option(WITH_OPENCV "Whether to find installed opencv dependency" @WITH_OPENCV@)
+option(WITH_SPATIAL_INDEX "Whether to find installed spatialindex dependency" @WITH_SPATIAL_INDEX@)
+option(WITH_BOOST "Whether to find the BOOST dependency" @WITH_BOOST@)
+
+set(LOG_PREFIX " [Superbuild] -- ")
+
+macro(SLAM_DEFAULT_FIND_PACKAGE)
+    set(on_value_args NAME PACKAGE_NAME TARGET DEFAULT_RPATH)
+    cmake_parse_arguments(SLAM "" "${on_value_args}" "" ${ARGN})
+    if (WITH_${SLAM_NAME})
+        set(VAR_INSTALL_DIR ${SLAM_NAME}_INSTALL_DIR)
+        if (NOT ${VAR_INSTALL_DIR})
+            set(${VAR_INSTALL_DIR} ${SUPERBUILD_INSTALL_DIR}/${SLAM_DEFAULT_RPATH})
+        endif()
+        find_package(${SLAM_PACKAGE_NAME} REQUIRED CONFIG PATHS ${${VAR_INSTALL_DIR}} NO_DEFAULT_PATH)
+        if (NOT TARGET ${SLAM_TARGET})
+            message(FATAL_ERROR "${LOG_PREFIX}Could not find target ${SLAM_TARGET}")
+        endif()
+        message(INFO "${LOG_PREFIX}Successfully found target ${SLAM_TARGET}")
+    endif()
+endmacro(SLAM_DEFAULT_FIND_PACKAGE)
+
+# GLOG
+SLAM_DEFAULT_FIND_PACKAGE(NAME GLOG
+                          PACKAGE_NAME glog
+                          TARGET glog::glog
+                          DEFAULT_RPATH glog/lib/cmake/glog)
+
+
+# EIGEN
+# TODO: Clean this find package import
+if (WITH_EIGEN)
+   if (NOT EIGEN_DIR)
+      # Automatically set the path to the Eigen3Config.cmake file
+      if (MSVC)
+        set(EIGEN_DIR ${SUPERBUILD_INSTALL_DIR}/Eigen3/share/eigen3/cmake)
+      else()
+	set(EIGEN_DIR ${SUPERBUILD_INSTALL_DIR}/Eigen3/share/eigen3/cmake)
+      endif()
+      message(INFO "${LOG_PREFIX} Variable EIGEN_DIR not found, setting it to directory ${EIGEN_DIR}")
+   endif()
+   if (MSVC)
+	find_package(Eigen3 REQUIRED)
+   else()
+	    # Avoid searching for invalid Eigen Version
+        find_package(Eigen3 REQUIRED CONFIG PATHS ${EIGEN_DIR} NO_DEFAULT_PATH)
+   endif()
+   if (NOT TARGET Eigen3::Eigen)
+       message(FATAL_ERROR "${LOG_PREFIX}Could not find target Eigen3::Eigen")
+   endif ()
+   message(INFO "${LOG_PREFIX}Successfully Found Target Eigen3::Eigen")
+endif()
+
+
+# CERES
+if (MSVC)
+    set(CERES_DEFAULT_RPATH Ceres/CMake)
+else()
+    set(CERES_DEFAULT_RPATH Ceres/lib/cmake/Ceres)
+endif()
+
+SLAM_DEFAULT_FIND_PACKAGE(NAME CERES
+                          PACKAGE_NAME Ceres
+                          TARGET Ceres::ceres
+                          DEFAULT_RPATH ${CERES_DEFAULT_RPATH})
+
+# YAML_CPP
+SLAM_DEFAULT_FIND_PACKAGE(NAME YAML_CPP
+                          PACKAGE_NAME yaml-cpp
+                          TARGET yaml-cpp
+                          DEFAULT_RPATH yaml-cpp/lib/cmake/yaml-cpp)
+
+# GTest
+SLAM_DEFAULT_FIND_PACKAGE(NAME GTEST
+                          PACKAGE_NAME GTest
+                          TARGET GTest::gtest
+                          DEFAULT_RPATH googletest/lib/cmake/GTest)
+
+
+# VIZ3D
+SLAM_DEFAULT_FIND_PACKAGE(NAME VIZ3D
+                          PACKAGE_NAME viz3d
+                          TARGET viz3d
+                          DEFAULT_RPATH viz3d/lib/cmake)
+
+# CEREAL
+SLAM_DEFAULT_FIND_PACKAGE(NAME CEREAL
+                          PACKAGE_NAME cereal
+                          TARGET cereal
+                          DEFAULT_RPATH cereal/share/cmake/cereal)
+
+# TCLAP
+SLAM_DEFAULT_FIND_PACKAGE(NAME TCLAP
+                          PACKAGE_NAME tclap
+                          TARGET tclap::tclap
+                          DEFAULT_RPATH tclap/lib/cmake)
+
+# Tessil
+SLAM_DEFAULT_FIND_PACKAGE(NAME TESSIL
+                          PACKAGE_NAME tsl-robin-map
+                          TARGET tsl::robin_map
+                          DEFAULT_RPATH tessil/share/cmake/tsl-robin-map)
+
+# SQLITE
+SLAM_DEFAULT_FIND_PACKAGE(NAME SQLITE
+                          PACKAGE_NAME sqlite3
+                          TARGET sqlite3::sqlite3
+                          DEFAULT_RPATH sqlite3/lib/cmake)
+
+# G2O
+SLAM_DEFAULT_FIND_PACKAGE(NAME G2O
+                          PACKAGE_NAME g2o
+                          TARGET g2o::core
+                          DEFAULT_RPATH g2o/lib/cmake/g2o)
+
+# OPENCV
+SLAM_DEFAULT_FIND_PACKAGE(NAME OPENCV
+                          PACKAGE_NAME OpenCV
+                          TARGET opencv_core
+                          DEFAULT_RPATH opencv/lib/cmake/opencv4)
+
+
+# NANOFLANN
+SLAM_DEFAULT_FIND_PACKAGE(NAME NANOFLANN
+                          PACKAGE_NAME nanoflann
+                          TARGET nanoflann::nanoflann
+                          DEFAULT_RPATH nanoflann/share/nanoflann/cmake)
+
+# COLORMAP
+SLAM_DEFAULT_FIND_PACKAGE(NAME COLORMAP
+                          PACKAGE_NAME colormap
+                          TARGET colormap::colormap
+                          DEFAULT_RPATH colormap/lib/cmake)
+
+# TINYPLY
+SLAM_DEFAULT_FIND_PACKAGE(NAME TINYPLY
+                          PACKAGE_NAME tinyply
+                          TARGET tinyply::tinyply
+                          DEFAULT_RPATH tinyply/lib/cmake)
+
+# SPATIAL_INDEX
+SLAM_DEFAULT_FIND_PACKAGE(NAME SPATIAL_INDEX
+                          PACKAGE_NAME libspatialindex
+                          TARGET spatialindex
+                          DEFAULT_RPATH spatialindex/lib/cmake/libspatialindex)
+
+# BOOST
+if (WITH_BOOST)
+
+    if (NOT BOOST_VERSION)
+        message(INFO "${LOG_PREFIX}Variable BOOST_VERSION not found, setting it to the default 1.78.0")
+        set(BOOST_VERSION "1.78.0")
+    endif()
+
+    if (NOT BOOST_DIR)
+ 	   set(BOOST_DIR ${SUPERBUILD_INSTALL_DIR}/boost/lib/cmake/Boost-${BOOST_VERSION})
+       message(INFO "${LOG_PREFIX}Variable BOOST_DIR not found, setting it to directory ${BOOST_DIR}")
+    endif()
+
+    if (NOT SUPERBUILD_BOOST_COMPONENTS)
+        message(INFO "${LOG_PREFIX}The variable SUPERBUILD_BOOST_COMPONENTS is not specified, the boost components will not be searched for.")
+    endif()
+
+    find_package(Boost REQUIRED COMPONENTS ${SUPERBUILD_BOOST_COMPONENTS} CONFIG PATHS ${BOOST_DIR} NO_DEFAULT_PATH)
+    message(INFO "${LOG_PREFIX}Successfully imported Boost, with components: ${SUPERBUILD_BOOST_COMPONENTS}")
+endif()

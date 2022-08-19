@@ -1,0 +1,62 @@
+variables:
+  _ci_build_dir: $CI_BUILDS_DIR
+  _ci_root_dir: $_ci_build_dir/..
+
+stages:
+  - prebuild
+  - superbuild
+  - install-ci #< Updates the install files on the CI
+
+job_description:
+  stage: prebuild
+  tags: [ linux ]
+  script:
+    - echo "VARIABLES FOR THE PIPELINE:"
+    - echo "CI_BUILD_DIR=$_ci_build_dir"
+    - echo "CI_ROOT_DIR=$_ci_root_dir"
+    - echo "For commit on a branch <branch_name> in {dev, dev_ci, master}, the installation files will be copied to $CI_ROOT_DIR/INSTALL_DIRECTORIES/<branch_name>"
+    - export
+
+# The main superbuild JOB
+job_superbuild:
+  needs: [ job_description ]
+  stage: superbuild
+  tags: [ linux ]
+  script:
+    - bash superbuild.sh #< launches the superbuild
+
+# An additional job which copies install files for commit and specific branches
+.default_superbuild_update: &update_superbuild_job
+  stage: install-ci
+  tags: [ linux ]
+  needs: [ job_superbuild ]
+
+  script:
+    - export BRANCH_INSTALL_DIR=$_ci_root_dir/INSTALL_DIRECTORIES/$_branch
+    - cmake -E make_directory $BRANCH_INSTALL_DIR
+    - bash superbuild.sh Release $BRANCH_INSTALL_DIR
+
+# Update the superbuild on branch dev
+update_superbuild-dev:
+  variables:
+    _branch: dev
+  only:
+    - dev
+  <<: *update_superbuild_job
+
+# Updates the superbuild on branch dev_ci
+update_superbuild-dev_ci:
+  variables:
+    _branch: dev_ci
+  only:
+    - dev_ci
+  <<: *update_superbuild_job
+
+# Updates the superbuild on branch master
+update_superbuild-master:
+  variables:
+    _branch: master
+  only:
+    - master
+  <<: *update_superbuild_job
+
